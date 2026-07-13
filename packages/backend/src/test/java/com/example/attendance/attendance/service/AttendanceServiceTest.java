@@ -97,6 +97,43 @@ class AttendanceServiceTest {
             assertThat(captor.getValue().getEmployee().getId()).isEqualTo(employee.getId());
         }
 
+        @Test
+        @DisplayName("ATT-04: 出勤中（未退勤）に再度出勤打刻すると409エラー")
+        void clockIn_alreadyClockedIn_throwsConflict() {
+            // Arrange
+            when(employeeRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
+            when(attendanceRepository.findByEmployeeIdAndWorkDateAndClockOutIsNull(employee.getId(), TODAY_TOKYO))
+                    .thenReturn(Optional.of(AttendanceRecord.builder()
+                            .id(UUID.randomUUID())
+                            .employee(employee)
+                            .workDate(TODAY_TOKYO)
+                            .clockIn(Instant.parse("2025-01-14T23:00:00Z"))
+                            .build()));
+
+            // Act & Assert
+            assertThatThrownBy(() -> service.clockIn(employee.getId()))
+                    .isInstanceOf(ResponseStatusException.class);
+        }
+
+        @Test
+        @DisplayName("ATT-06: 退勤後に再出勤できる")
+        void clockIn_afterClockOut_createsNewRecord() {
+            // Arrange
+            when(employeeRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
+            when(attendanceRepository.findByEmployeeIdAndWorkDateAndClockOutIsNull(employee.getId(), TODAY_TOKYO))
+                    .thenReturn(Optional.empty());
+            when(attendanceRepository.save(any(AttendanceRecord.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+
+            // Act
+            var result = service.clockIn(employee.getId());
+
+            // Assert
+            assertThat(result.workDate()).isEqualTo(TODAY_TOKYO);
+            assertThat(result.clockIn()).isEqualTo(FIXED_INSTANT);
+            assertThat(result.clockOut()).isNull();
+        }
+
     }
 
     @Nested
