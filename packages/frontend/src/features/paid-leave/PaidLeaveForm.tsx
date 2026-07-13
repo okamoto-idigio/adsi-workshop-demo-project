@@ -59,7 +59,10 @@ export function PaidLeaveForm() {
         <div className="space-y-2">
           <Label htmlFor="leaveType">休暇種別</Label>
           <Select value={leaveType} onValueChange={(v) => setLeaveType(v as LeaveType)}>
-            <SelectTrigger id="leaveType"><SelectValue /></SelectTrigger>
+            <SelectTrigger id="leaveType"><SelectValue>{(value: string | null) => {
+              const labels: Record<string, string> = { FULL_DAY: "全休", AM_HALF: "午前休", PM_HALF: "午後休" };
+              return labels[value ?? ""] ?? "選択してください";
+            }}</SelectValue></SelectTrigger>
             <SelectContent>
               <SelectItem value="FULL_DAY">全休</SelectItem>
               <SelectItem value="AM_HALF">午前休</SelectItem>

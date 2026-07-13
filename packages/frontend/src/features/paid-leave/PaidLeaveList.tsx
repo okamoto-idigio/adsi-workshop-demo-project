@@ -23,7 +23,10 @@ export function PaidLeaveList() {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">申請一覧</h3>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as LeaveRequestStatus | "ALL")}>
-          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue>{(value: string | null) => {
+            const labels: Record<string, string> = { ALL: "すべて", PENDING: "申請中", APPROVED: "承認済み", REJECTED: "却下", WITHDRAWN: "取り下げ済み" };
+            return labels[value ?? ""] ?? "すべて";
+          }}</SelectValue></SelectTrigger>
           <SelectContent>
             <SelectItem value="ALL">すべて</SelectItem>
             <SelectItem value="PENDING">申請中</SelectItem>
