@@ -40,8 +40,8 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: () => logout(),
-    onSuccess: () => {
-      queryClient.clear();
+    onSettled: () => {
+      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
       router.push("/login");
     },
   });
