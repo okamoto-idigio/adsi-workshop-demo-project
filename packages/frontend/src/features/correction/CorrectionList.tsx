@@ -84,7 +84,12 @@ export function CorrectionList() {
       <div className="flex items-center justify-between">
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "ALL")}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>
+              {(value: string | null) => {
+                const opt = STATUS_OPTIONS.find((o) => o.value === value);
+                return opt?.label ?? "すべて";
+              }}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {STATUS_OPTIONS.map((opt) => (
