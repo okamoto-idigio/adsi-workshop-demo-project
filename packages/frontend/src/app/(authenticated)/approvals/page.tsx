@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/features/auth/useAuth";
 import { PendingCorrectionList } from "@/features/correction/PendingCorrectionList";
+import { PendingLeaveList } from "@/features/paid-leave/PendingLeaveList";
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ export default function ApprovalsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">承認</h1>
+      <PendingLeaveList />
       <PendingCorrectionList />
     </div>
   );
