@@ -89,7 +89,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "No active clock-in found"));
 
         record.setClockOut(Instant.now(clock));
-        if (memo != null && !memo.isEmpty()) {
+        if (memo != null && !memo.isBlank()) {
             record.setMemo(memo);
         }
         var saved = attendanceRepository.save(record);
@@ -99,10 +99,14 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     @Override
     @Transactional
-    public AttendanceRecordResponse updateMemo(UUID recordId, String memo) {
+    public AttendanceRecordResponse updateMemo(UUID recordId, String memo, UUID authenticatedEmployeeId) {
         var record = attendanceRepository.findById(recordId)
                 .orElseThrow(() -> new EntityNotFoundException(
                         "AttendanceRecord with id '%s' was not found".formatted(recordId)));
+
+        if (!record.getEmployee().getId().equals(authenticatedEmployeeId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot update memo of another employee's record");
+        }
 
         record.setMemo(memo);
         var saved = attendanceRepository.save(record);

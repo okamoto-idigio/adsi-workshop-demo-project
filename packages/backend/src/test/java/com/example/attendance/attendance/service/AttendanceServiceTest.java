@@ -335,7 +335,7 @@ class AttendanceServiceTest {
                     .thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            var result = service.updateMemo(record.getId(), "新メモ");
+            var result = service.updateMemo(record.getId(), "新メモ", employee.getId());
 
             // Assert
             assertThat(result.memo()).isEqualTo("新メモ");
@@ -357,7 +357,7 @@ class AttendanceServiceTest {
                     .thenAnswer(invocation -> invocation.getArgument(0));
 
             // Act
-            var result = service.updateMemo(record.getId(), null);
+            var result = service.updateMemo(record.getId(), null, employee.getId());
 
             // Assert
             assertThat(result.memo()).isNull();
@@ -371,8 +371,28 @@ class AttendanceServiceTest {
             when(attendanceRepository.findById(unknownId)).thenReturn(Optional.empty());
 
             // Act & Assert
-            assertThatThrownBy(() -> service.updateMemo(unknownId, "メモ"))
+            assertThatThrownBy(() -> service.updateMemo(unknownId, "メモ", employee.getId()))
                     .isInstanceOf(EntityNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("他人のレコードのメモ更新は403エラー")
+        void updateMemo_otherEmployee_throwsForbidden() {
+            // Arrange
+            var record = AttendanceRecord.builder()
+                    .id(UUID.randomUUID())
+                    .employee(employee)
+                    .workDate(TODAY_TOKYO)
+                    .clockIn(FIXED_INSTANT)
+                    .memo("旧メモ")
+                    .build();
+            when(attendanceRepository.findById(record.getId())).thenReturn(Optional.of(record));
+            var otherEmployeeId = UUID.randomUUID();
+
+            // Act & Assert
+            assertThatThrownBy(() -> service.updateMemo(record.getId(), "不正な更新", otherEmployeeId))
+                    .isInstanceOf(ResponseStatusException.class)
+                    .hasMessageContaining("FORBIDDEN");
         }
     }
 

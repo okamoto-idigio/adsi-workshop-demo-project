@@ -9,6 +9,8 @@ import com.example.attendance.attendance.dto.TodayStatusResponse;
 import com.example.attendance.attendance.service.AttendanceService;
 import com.example.attendance.common.config.CorsConfig;
 import com.example.attendance.common.config.SecurityConfig;
+import com.example.attendance.common.config.security.EmployeeUserDetails;
+import com.example.attendance.employee.entity.Role;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,19 +19,26 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,6 +72,14 @@ class AttendanceControllerTest {
     private AttendanceService attendanceService;
 
     private static final UUID EMPLOYEE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+
+    private static EmployeeUserDetails testPrincipal() {
+        return new EmployeeUserDetails(
+                "test@example.com", "password", true,
+                List.of(new SimpleGrantedAuthority("ROLE_EMPLOYEE")),
+                new EmployeeUserDetails.EmployeeInfo(
+                        EMPLOYEE_ID, "テスト社員", UUID.randomUUID(), "開発部", Role.EMPLOYEE, false));
+    }
 
     @Test
     @DisplayName("POST /api/attendance/clock-in は201を返す")
@@ -120,6 +137,67 @@ class AttendanceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("NOT_CLOCKED_IN"))
                 .andExpect(jsonPath("$.records").isArray());
+    }
+
+    @Test
+    @DisplayName("POST /api/attendance/clock-in メモ付きリクエストは201を返す")
+    void clockIn_withMemo_returns201() throws Exception {
+        // Arrange
+        var response = new AttendanceRecordResponse(
+                UUID.randomUUID(),
+                LocalDate.of(2025, 1, 15),
+                Instant.parse("2025-01-15T00:00:00Z"),
+                null,
+                false,
+                "電車遅延"
+        );
+        when(attendanceService.clockIn(eq(EMPLOYEE_ID), eq("電車遅延"))).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/attendance/clock-in")
+                        .param("employeeId", EMPLOYEE_ID.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"電車遅延\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.memo").value("電車遅延"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/attendance/{id}/memo はメモを更新して200を返す")
+    void updateMemo_validRequest_returns200() throws Exception {
+        // Arrange
+        var recordId = UUID.randomUUID();
+        var response = new AttendanceRecordResponse(
+                recordId,
+                LocalDate.of(2025, 1, 15),
+                Instant.parse("2025-01-15T00:00:00Z"),
+                null,
+                false,
+                "更新メモ"
+        );
+        when(attendanceService.updateMemo(eq(recordId), eq("更新メモ"), eq(EMPLOYEE_ID))).thenReturn(response);
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/attendance/{id}/memo", recordId)
+                        .with(user(testPrincipal()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"更新メモ\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memo").value("更新メモ"));
+    }
+
+    @Test
+    @DisplayName("PATCH /api/attendance/{id}/memo 21文字超過で400を返す")
+    void updateMemo_tooLongMemo_returns400() throws Exception {
+        // Arrange
+        var recordId = UUID.randomUUID();
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/attendance/{id}/memo", recordId)
+                        .with(user(testPrincipal()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memo\":\"123456789012345678901\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

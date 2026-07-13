@@ -6,8 +6,10 @@ import com.example.attendance.attendance.dto.AttendanceRecordResponse;
 import com.example.attendance.attendance.dto.TeamMemberSummaryResponse;
 import com.example.attendance.attendance.dto.TodayStatusResponse;
 import com.example.attendance.attendance.service.AttendanceService;
+import com.example.attendance.common.config.security.EmployeeUserDetails;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,8 +53,9 @@ public class AttendanceController {
     @PatchMapping("/{id}/memo")
     public AttendanceRecordResponse updateMemo(
             @PathVariable UUID id,
-            @Valid @RequestBody AttendanceMemoRequest request) {
-        return attendanceService.updateMemo(id, request.memo());
+            @Valid @RequestBody AttendanceMemoRequest request,
+            @AuthenticationPrincipal EmployeeUserDetails principal) {
+        return attendanceService.updateMemo(id, request.memo(), principal.getEmployeeId());
     }
 
     @GetMapping("/today")
