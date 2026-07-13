@@ -11,7 +11,7 @@ INSERT INTO departments (id, name, version, created_at, updated_at) VALUES
 -- 1. 管理者 (ADMIN, 開発部上長) — admin@example.com / demo1234
 INSERT INTO employees (id, name, email, password, department_id, role, is_manager, hire_date, version, created_at, updated_at) VALUES
     ('b0000000-0000-0000-0000-000000000001',
-     '佐藤 管理',
+     '岡本 管理',
      'admin@example.com',
      '$2a$10$lbVBVNeRC5o4zif4NMIiIukuiKiZW4eVPwvniwqouezFO32o0gYgm',
      'a0000000-0000-0000-0000-000000000001',
@@ -45,7 +45,7 @@ INSERT INTO employees (id, name, email, password, department_id, role, is_manage
      'EMPLOYEE', false, '2024-04-01', 0, NOW(), NOW());
 
 -- 勤怠記録（2026年6月の平日データ）
--- 佐藤 管理 (b...001) — 管理者、早めに出社
+-- 岡本 管理 (b...001) — 管理者、早めに出社
 INSERT INTO attendance_records (id, employee_id, work_date, clock_in, clock_out, corrected, version, created_at, updated_at) VALUES
     ('c0000000-0000-0000-0001-000000000601', 'b0000000-0000-0000-0000-000000000001', '2026-06-01', '2026-06-01 08:45:00+09', '2026-06-01 18:10:00+09', false, 0, NOW(), NOW()),
     ('c0000000-0000-0000-0001-000000000602', 'b0000000-0000-0000-0000-000000000001', '2026-06-02', '2026-06-02 08:50:00+09', '2026-06-02 18:30:00+09', false, 0, NOW(), NOW()),
