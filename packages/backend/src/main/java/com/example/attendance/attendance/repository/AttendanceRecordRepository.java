@@ -17,4 +17,6 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
     Optional<AttendanceRecord> findByEmployeeIdAndWorkDateAndClockOutIsNull(UUID employeeId, LocalDate workDate);
 
     List<AttendanceRecord> findByEmployeeIdInAndWorkDateBetween(List<UUID> employeeIds, LocalDate start, LocalDate end);
+
+    List<AttendanceRecord> findByEmployeeIdAndWorkDateIn(UUID employeeId, List<LocalDate> workDates);
 }
