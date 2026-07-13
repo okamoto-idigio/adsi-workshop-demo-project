@@ -2,8 +2,10 @@
 
 import { LogIn, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTime } from "./format";
+import { MEMO_MAX_LENGTH, validateMemo } from "./memo-validation";
 import { useClockIn, useClockOut, useTodayStatus } from "./useAttendance";
 
 function CurrentTime() {
@@ -48,6 +50,16 @@ export function ClockButtons() {
   const { data: todayStatus, isLoading } = useTodayStatus();
   const clockInMutation = useClockIn();
   const clockOutMutation = useClockOut();
+  const [memo, setMemo] = useState("");
+  const [memoError, setMemoError] = useState<string | null>(null);
+
+  const lastRecord = todayStatus?.records[todayStatus.records.length - 1];
+
+  useEffect(() => {
+    if (lastRecord?.memo) {
+      setMemo(lastRecord.memo);
+    }
+  }, [lastRecord?.memo]);
 
   if (isLoading) {
     return (
@@ -67,7 +79,10 @@ export function ClockButtons() {
   const canClockOut = status === "CLOCKED_IN";
   const isPending = clockInMutation.isPending || clockOutMutation.isPending;
 
-  const lastRecord = todayStatus?.records[todayStatus.records.length - 1];
+  const handleMemoChange = (value: string) => {
+    setMemo(value);
+    setMemoError(validateMemo(value));
+  };
 
   return (
     <div className="rounded-lg border p-6 space-y-4">
@@ -84,7 +99,7 @@ export function ClockButtons() {
         <button
           type="button"
           disabled={!canClockIn || isPending}
-          onClick={() => clockInMutation.mutate()}
+          onClick={() => clockInMutation.mutate(memo || undefined)}
           className="flex flex-col items-center justify-center gap-2 rounded-xl bg-blue-800 py-8 text-white transition-colors hover:bg-blue-900 active:bg-blue-950 disabled:bg-gray-200 disabled:text-gray-400"
         >
           <LogIn className="h-8 w-8" />
@@ -93,12 +108,22 @@ export function ClockButtons() {
         <button
           type="button"
           disabled={!canClockOut || isPending}
-          onClick={() => clockOutMutation.mutate()}
+          onClick={() => clockOutMutation.mutate(memo || undefined)}
           className="flex flex-col items-center justify-center gap-2 rounded-xl bg-orange-500 py-8 text-white transition-colors hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-200 disabled:text-gray-400"
         >
           <LogOut className="h-8 w-8" />
           <span className="text-lg font-bold">退勤</span>
         </button>
+      </div>
+      <div className="max-w-md mx-auto space-y-1">
+        <Input
+          type="text"
+          value={memo}
+          onChange={(e) => handleMemoChange(e.target.value)}
+          maxLength={MEMO_MAX_LENGTH}
+          className={memoError ? "border-red-500" : ""}
+        />
+        {memoError && <p className="text-sm text-red-500">{memoError}</p>}
       </div>
     </div>
   );
